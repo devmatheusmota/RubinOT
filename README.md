@@ -10,7 +10,7 @@ Automation bot for [RubinOT](https://rubinot.com) (Open Tibia Server). Automates
 
 2. Install dependencies:
 ```
-pip install pyautogui pywin32 easyocr opencv-python numpy
+pip install pyautogui pywin32 easyocr opencv-python numpy dxcam bettercam windows-capture pymem
 ```
 
 ## Scripts
@@ -62,6 +62,41 @@ Add one item name per line. The OCR script will flag these when found on screen:
 dragon shield
 magic plate armor
 ```
+
+## Screen Capture Bypass Tests
+
+RubinOT has anti-screenshot protection that activates ~15 seconds after the game starts (likely `SetWindowDisplayAffinity`). The test scripts below try different approaches to bypass it.
+
+**Run `test1.py` first** to identify which protection the game uses, then try the others.
+
+| Script | Approach | Chance | Extra Setup |
+|--------|----------|--------|-------------|
+| `test1.py` | Affinity detection (diagnostic) | N/A | None |
+| `test2.py` | PrintWindow + PW_RENDERFULLCONTENT | Low-Medium | None |
+| `test3.py` | Windows.Graphics.Capture API | Low | Windows 10 1903+ |
+| `test4.py` | BetterCam (DXGI Duplication) | Low | None |
+| `test5.py` | **OBS Virtual Camera** | **Very High** | OBS Studio + Game Capture |
+| `test6.py` | **Virtual Display Driver** | **Very High** | Virtual Display Driver install |
+| `test7.py` | Pymem injection (remove protection) | Medium | Run as Administrator |
+
+### test5.py — OBS Virtual Camera (Recommended)
+
+This is the most likely to work. OBS Game Capture hooks into the game's rendering pipeline, bypassing the protection entirely. This is the same approach used by [TibiaAuto12](https://github.com/MuriloChianfa/TibiaAuto12).
+
+1. Install [OBS Studio](https://obsproject.com/download)
+2. Create a new Scene, add a **Game Capture** source
+3. Set Mode to **Capture specific window**, select `[RubinOT.exe]: RubinOT`
+4. Click **Start Virtual Camera** (bottom right of OBS)
+5. Run `python test5.py`
+
+### test6.py — Virtual Display Driver
+
+Architecturally guaranteed to work because `SetWindowDisplayAffinity` only blocks capture APIs, not display outputs. A virtual monitor receives the full GPU scanout.
+
+1. Download [Virtual Display Driver](https://github.com/VirtualDrivers/Virtual-Display-Driver/releases)
+2. Install the driver via Device Manager (requires Admin)
+3. Set display mode to **Duplicate** in Windows Display Settings
+4. Run `python test6.py`
 
 ## Troubleshooting
 
